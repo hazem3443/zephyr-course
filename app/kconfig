@@ -1,0 +1,105 @@
+# menuconfig LED_SUBSYSTEM
+# bool "LED Subsystem"
+# default y
+
+# if LED SUBSYSTEM
+
+# config LED_BRIGHTNESS
+# int "LED brightness (0-100)"
+# default 100
+
+# endif # LED SUBSYSTEM
+
+# config LED BRIGHTNESS
+# int "LED brightness (0-100)"
+# range 0 100
+# default 100
+
+# config LED FADE DURATION MS
+# int "Fade duration (ms)"
+# range 0 5000
+# default 500
+
+# if LED SUBSYSTEM
+
+# config LED_BRIGHTNESS # Automatically gets: depends on LED_SUBSYSTEM
+# int "LED brightness (0-100)"
+
+# config LED_FADE_DURATION_MS # Also gets: depends on LED_SUBSYSTEM
+# int "Fade duration (ms)"
+
+# endif # LED SUBSYSTEM
+
+
+# config LED BRIGHTNESS
+# int "LED brightness (0-100)"
+# depends on LED SUBSYSTEM
+# default 100
+
+
+menuconfig LED_SUBSYSTEM
+    bool "LED Subsystem"
+    default y
+
+if LED_SUBSYSTEM
+
+choice
+    prompt "LED blink sleep time"
+    default BLINK_SLEEP_TIME_MS_1000
+config BLINK_SLEEP_TIME_MS_250
+    bool "250ms veryfast"
+config BLINK_SLEEP_TIME_MS_500
+    bool "500ms fast"
+config BLINK_SLEEP_TIME_MS_1000
+    bool "1s normal"
+config BLINK_SLEEP_TIME_MS_2000
+    bool "2s slow"
+endchoice
+
+config BLINK_SLEEP_TIME_MS
+    int
+    default 250 if BLINK_SLEEP_TIME_MS_250
+    default 500 if BLINK_SLEEP_TIME_MS_500
+    default 1000 if BLINK_SLEEP_TIME_MS_1000
+    default 2000 if BLINK_SLEEP_TIME_MS_2000
+    default 0
+    help
+      Time to sleep between toggling the LED
+      The value must be between 100 and 5000 milliseconds.
+
+#advanced led settings
+menuconfig ADVANCED_LED_SETTINGS
+    bool "Advanced LED settings"
+    depends on LED_SUBSYSTEM
+
+if ADVANCED_LED_SETTINGS
+config LED_BRIGHTNESS
+    int "LED brightness (0-100)"
+    range 0 100
+    default 100
+
+config LED_FADE_DURATION_MS
+    int "LED fade duration (ms)"
+    range 0 5000
+    default 500
+endif # ADVANCED_LED_SETTINGS
+
+menu "Expert settings"
+    visible if ADVANCED_LED_SETTINGS
+
+config LED_DEBUG
+    bool "Enable LED debugging"
+    default n
+
+config CUSTOM_LED_PATTERN
+    bool "Custom blink pattern"
+    default n
+
+endmenu
+
+endif # LED_SUBSYSTEM
+
+
+
+
+source "Kconfig.zephyr"
