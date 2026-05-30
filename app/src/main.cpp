@@ -2,43 +2,32 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
+LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
-/* The devicetree node identifier for the "led0" alias. */
-#define LED_NODE DT_ALIAS(blueled_onboard)
-#define LED_RED DT_NODELABEL(ledred)
-#define LED_GREEN DT_NODELABEL(ledgreen)
-#define LED_BLUE DT_NODELABEL(ledblue)
+/* Board-independent: app-led alias is defined in the board overlay */
+#define LED_NODE DT_ALIAS(app_led)
 
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED_NODE, gpios);
-static const struct gpio_dt_spec led_red = GPIO_DT_SPEC_GET(LED_RED, gpios);
-static const struct gpio_dt_spec led_green = GPIO_DT_SPEC_GET(LED_GREEN, gpios);
-static const struct gpio_dt_spec led_blue = GPIO_DT_SPEC_GET(LED_BLUE, gpios);
-
-LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
 int main(void)
 {
-    bool led_state = true;
+    if (!gpio_is_ready_dt(&led)) {
+        LOG_ERR("LED device not ready");
+        return 0;
+    }
 
-    if (!gpio_is_ready_dt(&led)) return 0;
-    if (!gpio_is_ready_dt(&led_red)) return 0;
-    if (!gpio_is_ready_dt(&led_green)) return 0;
-    if (!gpio_is_ready_dt(&led_blue)) return 0;
-    
-    if (gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE) < 0) return 0;
-    if (gpio_pin_configure_dt(&led_red, GPIO_OUTPUT_ACTIVE) < 0) return 0;
-    if (gpio_pin_configure_dt(&led_green, GPIO_OUTPUT_ACTIVE) < 0) return 0;
-    if (gpio_pin_configure_dt(&led_blue, GPIO_OUTPUT_ACTIVE) < 0) return 0;
+    if (gpio_pin_configure_dt(&led, GPIO_OUTPUT_INACTIVE) < 0) {
+        LOG_ERR("Failed to configure LED pin");
+        return 0;
+    }
+
+    LOG_INF("Heartbeat LED started, period: %d ms", CONFIG_APP_HEARTBEAT_PERIOD_MS);
 
     while (1) {
-        if (gpio_pin_toggle_dt(&led) < 0) return 0;
-        if (gpio_pin_toggle_dt(&led_red) < 0) return 0;
-        if (gpio_pin_toggle_dt(&led_green) < 0) return 0;
-        if (gpio_pin_toggle_dt(&led_blue) < 0) return 0;
-
-        led_state = !led_state;
-        LOG_INF("LED state: %s", led_state ? "ON" : "OFF");
-        k_msleep(CONFIG_BLINK_SLEEP_TIME_MS);
+        gpio_pin_toggle_dt(&led);
+        LOG_INF("LED toggled");
+        k_msleep(CONFIG_APP_HEARTBEAT_PERIOD_MS);
     }
+
     return 0;
 }
