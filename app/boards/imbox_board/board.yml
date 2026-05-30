@@ -1,0 +1,6 @@
+board:
+  name: imbox_board
+  full_name: IMBOX Board
+  vendor: espressif
+  socs:
+  - name: esp32
