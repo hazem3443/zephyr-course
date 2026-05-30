@@ -1,0 +1,32 @@
+/ {
+	aliases {
+		blueledonboard = &led2;
+		redledexternal = &led23;
+		greenledexternal = &led22;
+		blueledexternal = &led1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led2: led_2 {
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+			label = "Blue LED";
+		};
+
+		led23: led_23 {
+			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+			label = "Red LED";
+		};
+
+		led22: led_22 {
+			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+			label = "Green LED";
+		};
+
+		led1: led_1 {
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+			label = "Blue LED External";
+		};
+
+	};
+};
