@@ -1,0 +1,15 @@
+identifier: imbox
+name: IMBOX charging lock Board
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - nvs
+  - spi
+  - i2c
+  - counter
+  - entropy
+vendor: imbox_org
