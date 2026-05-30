@@ -4,10 +4,10 @@
 
 
 /* The devicetree node identifier for the "led0" alias. */
-#define LED_NODE DT_ALIAS(blueledonboard)
-#define LED_RED DT_ALIAS(redledexternal)
-#define LED_GREEN DT_ALIAS(greenledexternal)
-#define LED_BLUE DT_ALIAS(blueledexternal)
+#define LED_NODE DT_ALIAS(blueled_onboard)
+#define LED_RED DT_NODELABEL(ledred)
+#define LED_GREEN DT_NODELABEL(ledgreen)
+#define LED_BLUE DT_NODELABEL(ledblue)
 
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED_NODE, gpios);
 static const struct gpio_dt_spec led_red = GPIO_DT_SPEC_GET(LED_RED, gpios);
