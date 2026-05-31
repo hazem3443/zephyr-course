@@ -12,25 +12,45 @@ static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED_NODE, gpios);
 
 namespace {
     int test(){
-        const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(our_driver0));
-        struct sensor_value val;
-
-        if (!device_is_ready(dev)) {
-            LOG_ERR("our_driver0 not found or not ready");
-            return -ENODEV;
-        }
-        auto ret = sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &val);
-        LOG_INF("sensor_channel_get returned %d", ret);
-
+        const struct device *dev0 = DEVICE_DT_GET(DT_NODELABEL(our_driver0));
         const struct device *dev1 = DEVICE_DT_GET(DT_NODELABEL(our_driver1));
-        struct sensor_value val1;
-        if (!device_is_ready(dev1)) {
-            LOG_ERR("our_driver1 not found or not ready");
+        struct sensor_value val0, val1;
+
+        if (!device_is_ready(dev0)) {
+            LOG_ERR("our_driver0 not ready");
             return -ENODEV;
         }
-        sensor_sample_fetch_chan(dev1, SENSOR_CHAN_AMBIENT_TEMP);
-        auto ret1 = sensor_channel_get(dev1, SENSOR_CHAN_AMBIENT_TEMP, &val1);
-        LOG_INF("sensor_channel_get returned %d", ret1);
+        if (!device_is_ready(dev1)) {
+            LOG_ERR("our_driver1 not ready");
+            return -ENODEV;
+        }
+
+        /* --- Drive dev0 counter up to 3 via channel_get --- */
+        sensor_channel_get(dev0, SENSOR_CHAN_AMBIENT_TEMP, &val0);  /* dev0 counter = 1 */
+        sensor_channel_get(dev0, SENSOR_CHAN_AMBIENT_TEMP, &val0);  /* dev0 counter = 2 */
+        sensor_channel_get(dev0, SENSOR_CHAN_AMBIENT_TEMP, &val0);  /* dev0 counter = 3 */
+        LOG_INF("dev0 counter after 3x channel_get = %d (expected 3)", val0.val1);
+
+        /* --- dev1 counter stays at 0 --- independent from dev0 --- */
+        sensor_channel_get(dev1, SENSOR_CHAN_AMBIENT_TEMP, &val1);  /* dev1 counter = 1 */
+        LOG_INF("dev1 counter after 1x channel_get = %d (expected 1)", val1.val1);
+
+        /* --- Decrement dev0 twice via sample_fetch --- */
+        sensor_sample_fetch_chan(dev0, SENSOR_CHAN_AMBIENT_TEMP);    /* dev0 counter = 2 */
+        sensor_sample_fetch_chan(dev0, SENSOR_CHAN_AMBIENT_TEMP);    /* dev0 counter = 1 */
+        sensor_channel_get(dev0, SENSOR_CHAN_AMBIENT_TEMP, &val0);  /* dev0 counter = 2 */
+        LOG_INF("dev0 counter after 2x fetch + 1x get = %d (expected 2)", val0.val1);
+
+        /* --- dev1 unaffected by dev0 ops --- */
+        sensor_channel_get(dev1, SENSOR_CHAN_AMBIENT_TEMP, &val1);  /* dev1 counter = 2 */
+        LOG_INF("dev1 counter after 2x channel_get = %d (expected 2)", val1.val1);
+
+        /* --- Decrement dev1 once, dev0 unchanged --- */
+        sensor_sample_fetch_chan(dev1, SENSOR_CHAN_AMBIENT_TEMP);    /* dev1 counter = 1 */
+        sensor_channel_get(dev0, SENSOR_CHAN_AMBIENT_TEMP, &val0);  /* dev0 counter = 3 */
+        sensor_channel_get(dev1, SENSOR_CHAN_AMBIENT_TEMP, &val1);  /* dev1 counter = 2 */
+        LOG_INF("dev0 final = %d (expected 3), dev1 final = %d (expected 2)",
+                val0.val1, val1.val1);
 
         return 0;
     }

@@ -1,4 +1,3 @@
-#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/logging/log.h>
 
@@ -7,31 +6,31 @@
 LOG_MODULE_REGISTER(our_driver, LOG_LEVEL_INF);
 
 struct our_driver_data {
-    struct gpio_dt_spec led;
+    int counter;
 };
 
-/* sample_fetch: turn the LED ON */
+/* sample_fetch: decrement the per-instance counter */
 static int sample_fetch_my_impl(const struct device *dev,
                                 enum sensor_channel chan)
 {
     struct our_driver_data *data = dev->data;
 
-    LOG_INF("sample_fetch: LED on (channel %d)", chan);
-    gpio_pin_set_dt(&data->led, 0);
-    k_msleep(1000);
+    data->counter--;
+    LOG_INF("%s sample_fetch: counter = %d", dev->name, data->counter);
     return 0;
 }
 
-/* channel_get: turn the LED OFF */
+/* channel_get: increment the per-instance counter and return it */
 static int channel_get_my_impl(const struct device *dev,
                                enum sensor_channel chan,
                                struct sensor_value *val)
 {
     struct our_driver_data *data = dev->data;
 
-    LOG_INF("channel_get: LED off (channel %d)", chan);
-    gpio_pin_set_dt(&data->led, 1);
-    k_msleep(1000);
+    data->counter++;
+    val->val1 = data->counter;
+    val->val2 = 0;
+    LOG_INF("%s channel_get: counter = %d", dev->name, data->counter);
     return 0;
 }
 
@@ -39,13 +38,8 @@ static int init(const struct device *dev)
 {
     struct our_driver_data *data = dev->data;
 
-    if (!gpio_is_ready_dt(&data->led)) {
-        LOG_ERR("LED GPIO not ready");
-        return -ENODEV;
-    }
-    gpio_pin_configure_dt(&data->led, GPIO_OUTPUT_INACTIVE);
-
-    LOG_INF("our driver initialized");
+    data->counter = 0;
+    LOG_INF("%s initialized, counter = 0", dev->name);
     return 0;
 }
 
@@ -56,7 +50,7 @@ static DEVICE_API(sensor, api_iomico_lecture) = {
 
 #define OUR_DRIVER_DATA(inst) \
     static struct our_driver_data our_driver_data_##inst = { \
-        .led = GPIO_DT_SPEC_INST_GET(inst, gpios), \
+        .counter = 0, \
     };
 
 #define DEV_INST(inst) \
