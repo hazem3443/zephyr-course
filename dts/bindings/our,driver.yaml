@@ -1,3 +1,9 @@
 description: Our simple GPIO driver
 compatible: "our,driver"
 include: "base.yaml"
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    description: GPIO to toggle (on for sample_fetch, off for channel_get)
