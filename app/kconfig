@@ -69,3 +69,4 @@ config APP_HEARTBEAT_PERIOD_MS
       Increase to slow down the heartbeat, decrease to speed it up.
 
 source "Kconfig.zephyr"
+rsource "drivers/our_driver/Kconfig"

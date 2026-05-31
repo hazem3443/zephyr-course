@@ -1,0 +1,6 @@
+config OUR_DRIVER
+    bool "Our Driver"
+    default y
+    help
+      Enable support for our custom driver.
+      This is a placeholder for your own driver configuration.
