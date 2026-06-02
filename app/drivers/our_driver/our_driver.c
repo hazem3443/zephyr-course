@@ -1,4 +1,4 @@
-#include <zephyr/drivers/sensor.h>
+#include "our_driver.h"
 #include <zephyr/logging/log.h>
 
 #define DT_DRV_COMPAT our_driver
@@ -34,6 +34,16 @@ static int channel_get_my_impl(const struct device *dev,
     return 0;
 }
 
+/* set_counter extension: directly write the counter, range [-1000, 1000] */
+static int set_counter_impl(const struct device *dev, int value)
+{
+    struct our_driver_data *data = dev->data;
+
+    data->counter = value;
+    LOG_INF("%s set_counter: counter = %d", dev->name, value);
+    return 0;
+}
+
 static int init(const struct device *dev)
 {
     struct our_driver_data *data = dev->data;
@@ -43,9 +53,12 @@ static int init(const struct device *dev)
     return 0;
 }
 
-static DEVICE_API(sensor, api_iomico_lecture) = {
-    .sample_fetch = sample_fetch_my_impl,
-    .channel_get  = channel_get_my_impl,
+static const struct our_driver_api api_iomico_lecture = {
+    .sensor = {
+        .sample_fetch = sample_fetch_my_impl,
+        .channel_get  = channel_get_my_impl,
+    },
+    .set_counter = set_counter_impl,
 };
 
 #define OUR_DRIVER_DATA(inst) \
