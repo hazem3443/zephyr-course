@@ -1,33 +1,70 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/device.h>
 
-static int cmd_channel_get_handler(const struct shell *shell, size_t argc, char **argv)
+/* sensor fetch <device_name> */
+static int cmd_sensor_fetch(const struct shell *sh, size_t argc, char **argv)
 {
     const struct device *dev = device_get_binding(argv[1]);
+
     if (!dev) {
-        shell_error(shell, "Device not found: %s", argv[1]);
-        return -EFAULT;
+        shell_error(sh, "Device not found: %s", argv[1]);
+        return -ENODEV;
     }
-    struct sensor_value val;
-    int ret = sensor_channel_get(dev, SENSOR_CHAN_ACCEL_X, &val);
+
+    int ret = sensor_sample_fetch(dev);
 
     if (ret) {
-        shell_error(shell, "Failed to get channel: %d", ret);
-        return -EFAULT;
+        shell_error(sh, "sensor_sample_fetch failed: %d", ret);
+        return ret;
     }
-    shell_info(shell, "Channel of my driver is: %d", val.val1);
-    // shell_warn(shell, "Channel of my driver is: %d", 5);
-    // shell_error(shell, "Channel of my driver is: %d", 5);
-    // shell_fprintf(shell, /* purple */ SHELL_OPTION ,"Channel of my driver is: %d\n", 5);
-    // shell_fprintf(shell, /* purple */ SHELL_VT100_COLOR_BLUE ,"Channel of my driver is: %d\n", 5);
-    // shell_fprintf(shell, /* purple */ SHELL_VT100_COLOR_MAGENTA ,"Channel of my driver is: %d\n", 5);
-    // shell_fprintf(shell, /* purple */ SHELL_VT100_COLOR_CYAN ,"Channel of my driver is: %d\n", 5);
+
+    shell_print(sh, "%s: sample fetched", dev->name);
     return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(our_driver_subcmd,
-    SHELL_CMD_ARG(channel_get, NULL, "Get channel of my driver", cmd_channel_get_handler, 2, 0),
+/* sensor read <device_name> */
+static int cmd_sensor_read(const struct shell *sh, size_t argc, char **argv)
+{
+    const struct device *dev = device_get_binding(argv[1]);
+
+    if (!dev) {
+        shell_error(sh, "Device not found: %s", argv[1]);
+        return -ENODEV;
+    }
+
+    struct sensor_value val;
+    int ret = sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &val);
+
+    if (ret) {
+        shell_error(sh, "sensor_channel_get failed: %d", ret);
+        return ret;
+    }
+
+    shell_print(sh, "%s: counter = %d", dev->name, val.val1);
+    return 0;
+}
+
+/* sensor info <device_name> */
+static int cmd_sensor_info(const struct shell *sh, size_t argc, char **argv)
+{
+    const struct device *dev = device_get_binding(argv[1]);
+
+    if (!dev) {
+        shell_error(sh, "Device not found: %s", argv[1]);
+        return -ENODEV;
+    }
+
+    shell_print(sh, "name:  %s", dev->name);
+    shell_print(sh, "ready: %s", device_is_ready(dev) ? "yes" : "no");
+    return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_sensor,
+    SHELL_CMD_ARG(fetch, NULL, "<dev>  Call sensor_sample_fetch()", cmd_sensor_fetch, 2, 0),
+    SHELL_CMD_ARG(read,  NULL, "<dev>  Call sensor_channel_get() and print counter", cmd_sensor_read, 2, 0),
+    SHELL_CMD_ARG(info,  NULL, "<dev>  Print device name and ready state", cmd_sensor_info, 2, 0),
     SHELL_SUBCMD_SET_END
 );
 
-SHELL_CMD_REGISTER(our_driver, &our_driver_subcmd, "Commands for our driver shell", NULL);
+SHELL_CMD_REGISTER(sensor, &sub_sensor, "Sensor driver commands", NULL);
