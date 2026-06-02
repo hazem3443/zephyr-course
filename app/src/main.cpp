@@ -73,7 +73,7 @@ int main(void)
 
     while (1) {
         gpio_pin_toggle_dt(&led);
-        LOG_INF("LED toggled");
+        // LOG_INF("LED toggled");
         k_msleep(CONFIG_APP_HEARTBEAT_PERIOD_MS);
     }
 
